@@ -1,0 +1,18 @@
+cap = cv2.VideoCapture("/content/drive/MyDrive/SDGP/Ai_model/detection/chilli_testing.mp4")
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter("/content/processed_video.mp4", fourcc, 20.0,
+                      (int(cap.get(3)), int(cap.get(4))))
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Draw YOLO bounding boxes and MobileNetV2 labels here
+    # Example: cv2.rectangle(frame, (x,y), (x+w,y+h), (0,255,0), 2)
+
+    out.write(frame)  # save frame to new video
+
+cap.release()
+out.release()
+print("Processed video saved!")
