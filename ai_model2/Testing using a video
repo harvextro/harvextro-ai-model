@@ -1,0 +1,110 @@
+layer_names = net.getLayerNames()
+
+output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
+
+#cant use this cause the colab doesnt acess the web cam
+# must run this in the local pc
+
+cap = cv2.VideoCapture(0)  # 0 is usually the default webcam
+if not cap.isOpened():
+    print("Error: Camera not found")
+
+#testing using a video
+cap = cv2.VideoCapture("/content/drive/MyDrive/SDGP/Ai_model/detection/chilli_testing.mp4")  # path to a test video
+
+if not cap.isOpened():
+    print("Error: Video file not found")
+else:
+  print("video was found")
+
+while True:
+    ret, frame = cap.read()  # read one frame
+    if not ret:
+        print("End of video reached or failed to read frame")
+        break  # exit the loop when video ends or frame is invalid
+
+    height, width, _ = frame.shape  # safe now
+    # ---- your YOLO + MobileNetV2 processing here ----
+    # e.g., create blob, forward pass, classify detected chillies
+
+cap.release()
+cv2.destroyAllWindows()
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Open cv has read. there is no frame no read ")
+        break
+
+    # --- YOLO detection ---
+    blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), (0,0,0), swapRB=True, crop=False)
+    net.setInput(blob)
+    outputs = net.forward(output_layers)
+
+for output in outputs:
+
+        for detection in output:
+
+            scores = detection[5:]
+            class_id = np.argmax(scores)
+            confidence = scores[class_id]
+
+            if confidence > 0.5:
+
+                center_x = int(detection[0] * width)
+                center_y = int(detection[1] * height)
+
+                w = int(detection[2] * width)
+                h = int(detection[3] * height)
+
+                x = int(center_x - w/2)
+                y = int(center_y - h/2)
+
+for output in outputs:
+    for detection in output:
+        scores = detection[5:]  # class scores
+        class_id = np.argmax(scores)
+        confidence = scores[class_id]
+
+        if confidence > 0.5:
+            center_x = int(detection[0] * width)
+            center_y = int(detection[1] * height)
+            w = int(detection[2] * width)
+            h = int(detection[3] * height)
+
+            x = int(center_x - w/2)
+            y = int(center_y - h/2)
+
+            # Now you can safely crop
+            chilli_crop = frame[y:y+h, x:x+w]
+
+            # Run MobileNetV2 classification here
+            # pred = model.predict(...)
+            # label = predicted class
+            # conf = confidence
+
+            # ✅ Now you can draw rectangle and text
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0,255,0), 2)
+            text = f"{label} {conf*100:.1f}%"
+            cv2.putText(frame,
+                        text,
+                        (x, y-10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (0,255,0),
+                        1)
+
+from google.colab.patches import cv2_imshow
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("End of video reached")
+        break
+
+    # YOLO + MobileNetV2 processing here
+
+    # Show frame in Colab
+    cv2_imshow(frame)
+
+
