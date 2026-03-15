@@ -1,0 +1,9 @@
+from IPython.display import Image, display
+import glob
+
+test_images = glob.glob('data/obj/*.jpg')[:3]
+weights = 'backup/yolov3-tiny-custom_best.weights'  # or last.weights
+
+for img in test_images:
+    !./darknet detector test data/obj.data cfg/yolov3-tiny-custom.cfg {weights} {img} -dont_show -ext_output -out result.jpg
+    display(Image('result.jpg'))
