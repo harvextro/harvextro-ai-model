@@ -16,3 +16,10 @@ while True:
 cap.release()
 out.release()
 print("Processed video saved!")
+
+from IPython.display import HTML
+from base64 import b64encode
+
+mp4 = open('/content/processed_video.mp4','rb').read()
+data_url = "data:video/mp4;base64," + b64encode(mp4).decode()
+HTML(f'<video width=600 controls src="{data_url}"></video>')
