@@ -1,0 +1,406 @@
+import os
+!git clone https://github.com/AlexeyAB/darknet /kaggle/working/darknet_new
+os.chdir('/kaggle/working/darknet_new')
+print("✅ Darknet cloned!")
+
+!apt-get install -y libopencv-dev
+
+os.chdir('/kaggle/working/darknet_new')
+
+!sed -i 's/GPU=0/GPU=1/' Makefile
+!sed -i 's/CUDNN=0/CUDNN=1/' Makefile
+!sed -i 's/OPENCV=0/OPENCV=1/' Makefile
+!sed -i 's|-L/usr/local/cuda/lib64|-L/usr/local/nvidia/lib64 -L/usr/local/cuda/lib64 -lcuda|' Makefile
+!sed -i 's|-lcuda |-lcuda -Wl,-rpath,/usr/local/nvidia/lib64 |' Makefile
+
+!make -j4 2>&1 | tail -5
+
+if os.path.exists('darknet'):
+    print("✅ Compiled with GPU!")
+    !./darknet version
+else:
+    print("❌ Failed")
+
+import os, glob, random, shutil
+
+# Create folders
+os.makedirs('/kaggle/working/darknet_new/data/obj', exist_ok=True)
+os.makedirs('/kaggle/working/backup', exist_ok=True)
+
+# ✅ FIXED: Your dataset is flat (all files directly in obj/ folder)
+# Update this to match your Kaggle dataset name
+DATASET_PATH = '/kaggle/input/datasets/dilniwijesinghe/scotchbonnet-new/yolo_dataset/obj'
+
+# Copy ALL files (images + label .txt files) directly
+copied = 0
+if os.path.exists(DATASET_PATH):
+    for f in os.listdir(DATASET_PATH):
+        src = os.path.join(DATASET_PATH, f)
+        dst = os.path.join('/kaggle/working/darknet_new/data/obj', f)
+        shutil.copy(src, dst)
+        copied += 1
+else:
+    print(f"❌ Dataset path not found: {DATASET_PATH}")
+    print("Available paths:")
+    for p in glob.glob('/kaggle/input/*/*'):
+        print(" ", p)
+
+total_imgs = len(glob.glob('/kaggle/working/darknet_new/data/obj/*.jpg'))
+total_txts = len(glob.glob('/kaggle/working/darknet_new/data/obj/*.txt'))
+print(f"✅ Files copied: {copied}")
+print(f"✅ Images: {total_imgs}")
+print(f"✅ Label files: {total_txts}")
+
+# Create obj.names
+with open('/kaggle/working/darknet_new/data/obj.names', 'w') as f:
+    f.write("yellow_chilli\ngreen_chilli\nmix_chilli\nred_chilli\nleaves\n")
+
+# ✅ FIXED: Copy train.txt and valid.txt from the dataset (already created)
+DATASET_ROOT = '/kaggle/input/scotchbonnet-new/yolo_dataset'
+
+train_src = os.path.join(DATASET_ROOT, 'train.txt')
+valid_src = os.path.join(DATASET_ROOT, 'valid.txt')
+
+if os.path.exists(train_src) and os.path.exists(valid_src):
+    shutil.copy(train_src, '/kaggle/working/darknet_new/data/train.txt')
+    shutil.copy(valid_src, '/kaggle/working/darknet_new/data/valid.txt')
+    print("✅ Copied train.txt and valid.txt from dataset")
+else:
+    # Fallback: generate from images in obj/
+    images = glob.glob('/kaggle/working/darknet_new/data/obj/*.jpg')
+    random.shuffle(images)
+    split = int(len(images) * 0.8)
+    with open('/kaggle/working/darknet_new/data/train.txt', 'w') as f:
+        f.write("\n".join(images[:split]) + "\n")
+    with open('/kaggle/working/darknet_new/data/valid.txt', 'w') as f:
+        f.write("\n".join(images[split:]) + "\n")
+    print(f"✅ Generated train.txt ({split} images) and valid.txt ({len(images)-split} images)")
+
+# ✅ FIXED: classes = 5
+with open('/kaggle/working/darknet_new/data/obj.data', 'w') as f:
+    f.write("classes = 5\n")
+    f.write("train = /kaggle/working/darknet_new/data/train.txt\n")
+    f.write("valid = /kaggle/working/darknet_new/data/valid.txt\n")
+    f.write("names = /kaggle/working/darknet_new/data/obj.names\n")
+    f.write("backup = /kaggle/working/backup/\n")
+
+train_count = sum(1 for _ in open('/kaggle/working/darknet_new/data/train.txt'))
+valid_count = sum(1 for _ in open('/kaggle/working/darknet_new/data/valid.txt'))
+print(f"✅ Train images: {train_count}")
+print(f"✅ Valid images: {valid_count}")
+print("✅ Config files created!")
+
+os.chdir('/kaggle/working/darknet_new')
+
+!cp cfg/yolov3-tiny.cfg cfg/yolov3-tiny-custom.cfg
+
+# Training settings
+!sed -i 's/batch=1/batch=64/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/subdivisions=1/subdivisions=16/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/max_batches = 500200/max_batches = 6000/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/steps=400000,450000/steps=4800,5400/' cfg/yolov3-tiny-custom.cfg
+# ✅ FIXED: classes=5
+!sed -i 's/classes=80/classes=5/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/learning_rate=0.001/learning_rate=0.0001/' cfg/yolov3-tiny-custom.cfg
+
+# ✅ FIXED: filters = (classes + 5) x 3 = (5+5)x3 = 30
+import re
+content = open('cfg/yolov3-tiny-custom.cfg').read()
+content = re.sub(r'filters=255', 'filters=30', content)
+open('cfg/yolov3-tiny-custom.cfg', 'w').write(content)
+print("✅ filters set to 30 (correct for 5 classes)")
+
+# Verify
+print("\n=== Config Verification ===")
+!grep -n "^classes\|^filters.*30\|^batch=\|learning_rate\|max_batches" cfg/yolov3-tiny-custom.cfg
+print("✅ Config ready!")
+
+os.chdir('/kaggle/working/darknet_new')
+!wget -q https://pjreddie.com/media/files/yolov3-tiny.weights
+print("✅ Pretrained weights downloaded!")
+
+os.chdir('/kaggle/working/darknet_new')
+
+!rm -rf /kaggle/working/backup/*
+
+print("🚀 STARTING CHILLI DETECTION TRAINING!")
+print("🌶️  Classes: yellow_chilli, green_chilli, mix_chilli, red_chilli, leaves")
+print("="*50)
+
+# Verify data before training
+imgs = glob.glob('/kaggle/working/darknet_new/data/obj/*.jpg')
+txts = glob.glob('/kaggle/working/darknet_new/data/obj/*.txt')
+print(f"Images in obj/: {len(imgs)}")
+print(f"Labels in obj/: {len(txts)}")
+
+if len(imgs) == 0:
+    print("❌ NO IMAGES FOUND - check your dataset path!")
+else:
+    !./darknet detector train \
+        /kaggle/working/darknet_new/data/obj.data \
+        /kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg \
+        yolov3-tiny.weights \
+        -dont_show -clear 2>&1 | tee /kaggle/working/training_log.txt
+
+import os
+os.chdir('/kaggle/working/darknet_new')
+
+print("🔄 Resuming training...")
+
+!./darknet detector train \
+    /kaggle/working/darknet_new/data/obj.data \
+    /kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg \
+    /kaggle/working/backup/yolov3-tiny-custom_last.weights \
+    -dont_show 2>&1 | tee /kaggle/working/training_log.txt
+
+import os
+print("=== Backup folder contents ===")
+!ls -lh /kaggle/working/backup/
+
+best = '/kaggle/working/backup/yolov3-tiny-custom_best.weights'
+last = '/kaggle/working/backup/yolov3-tiny-custom_last.weights'
+
+if os.path.exists(best):
+    print("✅ Best weights saved!")
+elif os.path.exists(last):
+    print("✅ Last weights saved - training ran!")
+else:
+    print("❌ No weights - training did not run. Check Cell 3 dataset path.")
+
+import glob
+from IPython.display import Image, display
+
+os.chdir('/kaggle/working/darknet_new')
+
+best = '/kaggle/working/backup/yolov3-tiny-custom_best.weights'
+last = '/kaggle/working/backup/yolov3-tiny-custom_last.weights'
+weights = best if os.path.exists(best) else last
+
+test_images = glob.glob('/kaggle/working/darknet_new/data/obj/*.jpg')[:3]
+
+for img in test_images:
+    print(f"\n🔍 Testing: {os.path.basename(img)}")
+    !./darknet detector test \
+        /kaggle/working/darknet_new/data/obj.data \
+        /kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg \
+        {weights} \
+        {img} \
+        -dont_show -ext_output \
+        -out /kaggle/working/result.jpg
+    if os.path.exists('/kaggle/working/result.jpg'):
+        display(Image('/kaggle/working/result.jpg'))
+    print("="*50)
+
+import shutil, os
+
+os.makedirs('/kaggle/working/chilli_detection_final', exist_ok=True)
+
+best = '/kaggle/working/backup/yolov3-tiny-custom_best.weights'
+last = '/kaggle/working/backup/yolov3-tiny-custom_last.weights'
+weights = best if os.path.exists(best) else last
+
+shutil.copy(weights, '/kaggle/working/chilli_detection_final/')
+shutil.copy('/kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg', '/kaggle/working/chilli_detection_final/')
+shutil.copy('/kaggle/working/darknet_new/data/obj.names', '/kaggle/working/chilli_detection_final/')
+shutil.copy('/kaggle/working/darknet_new/data/obj.data', '/kaggle/working/chilli_detection_final/')
+
+shutil.make_archive('/kaggle/working/chilli_detection_files', 'zip', '/kaggle/working/chilli_detection_final')
+print("✅ Done! Download chilli_detection_files.zip from the output panel")
+
+import os
+files = os.listdir('/kaggle/working/backup/')
+print(files)
+
+# Check current iteration
+!ls -la /kaggle/working/backup/
+!cat /kaggle/working/darknet_new/data/obj.data
+
+import os
+os.chdir('/kaggle/working/darknet_new')
+
+# Check if darknet exists
+if os.path.exists('darknet'):
+    print("✅ Darknet exists")
+else:
+    print("❌ Darknet missing - need to recompile")
+
+# Check weights
+if os.path.exists('/kaggle/working/backup/yolov3-tiny-custom_last.weights'):
+    print("✅ Last weights found - can resume!")
+else:
+    print("❌ No weights found")
+
+os.chdir('/kaggle/working/darknet_new')
+
+print("🔄 RESUMING TRAINING!")
+print("Starting from last saved weights...")
+
+!./darknet detector train \
+    /kaggle/working/darknet_new/data/obj.data \
+    /kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg \
+    /kaggle/working/backup/yolov3-tiny-custom_last.weights \
+    -dont_show -map -gpus 0,1
+
+import os, glob
+from IPython.display import Image, display
+os.chdir('/kaggle/working/darknet_new')
+
+test_images = glob.glob('/kaggle/working/darknet_new/data/obj/*.jpg')[:3]
+
+for img in test_images:
+    print(f"\n🔍 Detecting: {os.path.basename(img)}")
+    
+    !./darknet detector test \
+        /kaggle/working/darknet_new/data/obj.data \
+        /kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg \
+        /kaggle/working/backup/yolov3-tiny-custom_last.weights \
+        {img} \
+        -dont_show -ext_output \
+        -out /kaggle/working/result.jpg
+    
+    if os.path.exists('/kaggle/working/result.jpg'):
+        display(Image('/kaggle/working/result.jpg'))
+    print("="*50)
+
+import os, glob
+from IPython.display import Image, display
+os.chdir('/kaggle/working/darknet_new')
+
+test_images = glob.glob('/kaggle/working/darknet_new/data/obj/*.jpg')[:3]
+
+for img in test_images:
+    print(f"\n🔍 Detecting: {os.path.basename(img)}")
+    
+    !./darknet detector test \
+        /kaggle/working/darknet_new/data/obj.data \
+        /kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg \
+        /kaggle/working/backup/yolov3-tiny-custom_last.weights \
+        {img} \
+        -dont_show -ext_output
+
+    # Darknet saves to predictions.jpg by default
+    pred_path = '/kaggle/working/darknet_new/predictions.jpg'
+    if os.path.exists(pred_path):
+        display(Image(pred_path))
+    else:
+        print("⚠️ No prediction image found")
+    print("="*50)
+
+import os
+os.chdir('/kaggle/working/darknet_new')
+
+VIDEO_PATH = '/kaggle/input/datasets/dilniwijesinghe/output1/video1.mp4'  # <-- update filename
+OUTPUT_VIDEO = '/kaggle/working/detected_output.mp4'
+WEIGHTS = '/kaggle/working/backup/yolov3-tiny-custom_last.weights'
+CONFIG  = '/kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg'
+NAMES   = '/kaggle/working/darknet_new/data/obj.names'
+THRESH  = 0.3
+
+print(f'Video exists: {os.path.exists(VIDEO_PATH)}')
+print(f'Weights exists: {os.path.exists(WEIGHTS)}')
+print(f'Config exists: {os.path.exists(CONFIG)}')
+
+import cv2
+import numpy as np
+import time
+
+# Load class names
+with open(NAMES, "r") as f:
+    class_names = [line.strip() for line in f.readlines()]
+
+# Assign a unique color per class
+np.random.seed(42)
+colors = np.random.randint(0, 255, size=(len(class_names), 3), dtype=np.uint8).tolist()
+
+# Load YOLO network
+print("Loading YOLO model...")
+net = cv2.dnn.readNetFromDarknet(CONFIG, WEIGHTS)
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+layer_names = net.getLayerNames()
+output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers().flatten()]
+print(f"✅ Model loaded! Output layers: {output_layers}")
+
+# Open video
+cap = cv2.VideoCapture(VIDEO_PATH)
+if not cap.isOpened():
+    raise FileNotFoundError(f"Cannot open video: {VIDEO_PATH}")
+
+frame_w      = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+frame_h      = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+fps          = cap.get(cv2.CAP_PROP_FPS) or 25
+total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+print(f"Video: {frame_w}x{frame_h} @ {fps:.1f} FPS | Total frames: {total_frames}")
+
+# Video writer
+fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+out = cv2.VideoWriter(OUTPUT_VIDEO, fourcc, fps, (frame_w, frame_h))
+
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+
+frame_idx = 0
+start_time = time.time()
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    frame_idx += 1
+
+    blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
+    net.setInput(blob)
+    outs = net.forward(output_layers)
+
+    boxes, confidences, class_ids = [], [], []
+    for out_layer in outs:
+        for detection in out_layer:
+            scores = detection[5:]
+            class_id = int(np.argmax(scores))
+            confidence = float(scores[class_id])
+            if confidence > THRESH:
+                cx = int(detection[0] * frame_w)
+                cy = int(detection[1] * frame_h)
+                w  = int(detection[2] * frame_w)
+                h  = int(detection[3] * frame_h)
+                boxes.append([cx - w // 2, cy - h // 2, w, h])
+                confidences.append(confidence)
+                class_ids.append(class_id)
+
+    indices = cv2.dnn.NMSBoxes(boxes, confidences, THRESH, 0.4)
+    if len(indices) > 0:
+        for i in indices.flatten():
+            x, y, w, h = boxes[i]
+            label = f"{class_names[class_ids[i]]}: {confidences[i]:.2f}"
+            color = colors[class_ids[i]]
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            cv2.putText(frame, label, (x, y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+
+    cv2.putText(frame, f"Frame {frame_idx}/{total_frames}",
+                (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    out.write(frame)
+
+    if frame_idx % 50 == 0:
+        elapsed = time.time() - start_time
+        fps_proc = frame_idx / elapsed
+        eta = (total_frames - frame_idx) / fps_proc if fps_proc > 0 else 0
+        print(f"  [{frame_idx}/{total_frames}] {fps_proc:.1f} FPS | ETA: {eta:.0f}s")
+
+cap.release()
+out.release()
+
+elapsed = time.time() - start_time
+print(f"\n✅ Done! {frame_idx} frames in {elapsed:.1f}s")
+print(f"📹 Saved to: {OUTPUT_VIDEO}")
+
+import shutil, os
+
+os.makedirs('/kaggle/working/live_detection', exist_ok=True)
+
+shutil.copy('/kaggle/working/backup/yolov3-tiny-custom_last.weights', '/kaggle/working/live_detection/')
+shutil.copy('/kaggle/working/darknet_new/cfg/yolov3-tiny-custom.cfg', '/kaggle/working/live_detection/')
+shutil.copy('/kaggle/working/darknet_new/data/obj.names', '/kaggle/working/live_detection/')
+
+shutil.make_archive('/kaggle/working/live_detection_files', 'zip', '/kaggle/working/live_detection')
+print("✅ Done! Download live_detection_files.zip from the output panel")
