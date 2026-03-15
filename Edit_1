@@ -1,20 +1,27 @@
 import os
+# Clone the Darknet repository from GitHub into Kaggle working directory
 !git clone https://github.com/AlexeyAB/darknet /kaggle/working/darknet_new
 os.chdir('/kaggle/working/darknet_new')
 print("✅ Darknet cloned!")
 
+# Install OpenCV development libraries for image/video processing
 !apt-get install -y libopencv-dev
 
 os.chdir('/kaggle/working/darknet_new')
 
+# Enable GPU, CUDNN, and OpenCV in the Makefile
 !sed -i 's/GPU=0/GPU=1/' Makefile
 !sed -i 's/CUDNN=0/CUDNN=1/' Makefile
 !sed -i 's/OPENCV=0/OPENCV=1/' Makefile
+
+# Update CUDA linking in Makefile
 !sed -i 's|-L/usr/local/cuda/lib64|-L/usr/local/nvidia/lib64 -L/usr/local/cuda/lib64 -lcuda|' Makefile
 !sed -i 's|-lcuda |-lcuda -Wl,-rpath,/usr/local/nvidia/lib64 |' Makefile
 
+# Compile Darknet with GPU support (4 parallel jobs)
 !make -j4 2>&1 | tail -5
 
+# Check if compilation succeeded
 if os.path.exists('darknet'):
     print("✅ Compiled with GPU!")
     !./darknet version
