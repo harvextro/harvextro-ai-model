@@ -1,0 +1,38 @@
+import os, glob, shutil, random
+
+# Create folders
+os.makedirs('/kaggle/working/darknet_new/data/obj', exist_ok=True)
+os.makedirs('/kaggle/working/backup', exist_ok=True)
+
+# Dataset path
+DATASET_PATH = '/kaggle/input/datasets/dilniwijesinghe/scotchbonnet-new/yolo_dataset/obj'
+
+# Copy dataset files
+copied = 0
+for f in os.listdir(DATASET_PATH):
+    shutil.copy(os.path.join(DATASET_PATH, f), '/kaggle/working/darknet_new/data/obj')
+    copied += 1
+print(f"✅ Files copied: {copied}")
+
+# Check images & labels
+total_imgs = len(glob.glob('data/obj/*.jpg'))
+total_txts = len(glob.glob('data/obj/*.txt'))
+print(f"Images: {total_imgs}, Labels: {total_txts}")
+
+# Create obj.names
+with open('data/obj.names', 'w') as f:
+    f.write("yellow_chilli\ngreen_chilli\nmix_chilli\nred_chilli\nleaves\n")
+
+# Copy train.txt and valid.txt
+DATASET_ROOT = '/kaggle/input/scotchbonnet-new/yolo_dataset'
+shutil.copy(os.path.join(DATASET_ROOT, 'train.txt'), 'data/train.txt')
+shutil.copy(os.path.join(DATASET_ROOT, 'valid.txt'), 'data/valid.txt')
+print("✅ Train and valid files copied")
+
+# Create obj.data
+with open('data/obj.data', 'w') as f:
+    f.write("classes = 5\n")
+    f.write("train = data/train.txt\n")
+    f.write("valid = data/valid.txt\n")
+    f.write("names = data/obj.names\n")
+    f.write("backup = /kaggle/working/backup/\n")
