@@ -1,0 +1,15 @@
+#testing using a image
+from google.colab import files
+uploaded = files.upload()
+
+import cv2
+from google.colab.patches import cv2_imshow
+
+for file_name in uploaded.keys():
+    img = cv2.imread(file_name)
+    if img is None:
+        print(f"Failed to read {file_name}")
+        continue
+
+    height, width, _ = img.shape
+    cv2_imshow(img)  # display in Colab
