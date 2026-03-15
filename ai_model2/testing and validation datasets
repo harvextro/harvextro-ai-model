@@ -1,0 +1,65 @@
+import os
+
+dataset_path = "/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras"
+
+print("Root:", os.listdir(dataset_path))
+print("Train:", os.listdir(dataset_path + "/train"))
+print("Valid:", os.listdir(dataset_path + "/valid"))
+print("Test:", os.listdir(dataset_path + "/test"))
+
+import os
+os.listdir("/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras/train")
+
+YOLO_DATASET_DIR = "/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras"
+
+classes_file = os.path.join(YOLO_DATASET_DIR, "train", "_classes.txt")
+
+with open(classes_file) as f:
+    classes = [line.strip() for line in f.readlines()]
+
+print("Classes:", classes)
+
+YOLO_DATASET_DIR = "/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras"
+TF_DATASET_DIR = "/content/drive/MyDrive/SDGP/dataset_tf"
+
+# Read class names
+classes_file = os.path.join(YOLO_DATASET_DIR, "train", "_classes.txt")
+
+with open(classes_file) as f:
+    classes = [line.strip() for line in f.readlines()]
+
+print("Classes:", classes)
+
+# Create TensorFlow folders
+for split in ["train", "val"]:
+    for cls in classes:
+        os.makedirs(os.path.join(TF_DATASET_DIR, split, cls), exist_ok=True)
+
+# Function to read annotations
+def process_folder(folder_name, split):
+
+    folder_path = os.path.join(YOLO_DATASET_DIR, folder_name)
+    annotation_file = os.path.join(folder_path, "_annotations.txt")
+
+    with open(annotation_file) as f:
+        lines = f.readlines()[1:]  # skip header
+
+    for line in lines:
+        parts = line.strip().split(",")
+
+        image_name = parts[0]
+        class_name = parts[-1]
+
+        src = os.path.join(folder_path, image_name)
+        dst = os.path.join(TF_DATASET_DIR, split, class_name, image_name)
+
+        if os.path.exists(src):
+            shutil.copy(src, dst)
+
+# Convert train folder
+process_folder("train", "train")
+
+# Convert valid folder → val
+process_folder("valid", "val")
+
+print("✅ Dataset successfully converted!")
