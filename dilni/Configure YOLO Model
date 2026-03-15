@@ -1,0 +1,18 @@
+import re
+
+# Copy base cfg
+!cp cfg/yolov3-tiny.cfg cfg/yolov3-tiny-custom.cfg
+
+# Update training parameters
+!sed -i 's/batch=1/batch=64/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/subdivisions=1/subdivisions=16/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/max_batches = 500200/max_batches = 6000/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/steps=400000,450000/steps=4800,5400/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/classes=80/classes=5/' cfg/yolov3-tiny-custom.cfg
+!sed -i 's/learning_rate=0.001/learning_rate=0.0001/' cfg/yolov3-tiny-custom.cfg
+
+# Update filters = (classes + 5) * 3 = 30
+content = open('cfg/yolov3-tiny-custom.cfg').read()
+content = re.sub(r'filters=255', 'filters=30', content)
+open('cfg/yolov3-tiny-custom.cfg', 'w').write(content)
+print("✅ Config ready for 5 classes")
