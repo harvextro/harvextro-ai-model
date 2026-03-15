@@ -1,0 +1,86 @@
+import tensorflow as tf
+import numpy as np
+import cv2
+import os
+#tensor floew - main deep learning frame work
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dense
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.optimizers import Adam
+train_dir = "/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras/train"
+val_dir = "/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras/valid"
+
+IMG_SIZE = 224
+# the size of the image 224X224
+#MobileNetV2 expects this input
+BATCH_SIZE = 4
+# ===== Step 1: Imports =====
+import os
+import shutil
+import glob
+from sklearn.model_selection import train_test_split
+
+# ===== Step 2: Paths =====
+YOLO_DATASET_DIR = "/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras"  # YOLO root folder
+TF_DATASET_DIR = "/content/drive/MyDrive/SDGP/dataset_tf"  # TensorFlow output folder
+
+# ===== Step 3: Read classes =====
+# _classes.txt can be in any subfolder; here we take it from train
+classes_file = os.path.join(YOLO_DATASET_DIR, "train", "_classes.txt")
+with open(classes_file) as f:
+    classes = [line.strip() for line in f.readlines()]
+
+print("Classes detected:", classes)
+
+# ===== Step 4: Create TensorFlow folders =====
+for split in ["train", "val"]:
+    for cls in classes:
+        os.makedirs(os.path.join(TF_DATASET_DIR, split, cls), exist_ok=True)
+
+# ===== Step 5: Gather all images with labels =====
+image_files = []
+labels = []
+
+for folder in ["train", "valid", "test"]:
+    folder_path = os.path.join(YOLO_DATASET_DIR, folder)
+    # Find all image files
+    for img_path in glob.glob(os.path.join(folder_path, "*.*")):
+        if img_path.lower().endswith((".jpg", ".png")):
+            txt_file = os.path.splitext(img_path)[0] + ".txt"
+            if os.path.exists(txt_file):
+                # Read first class ID from txt
+                with open(txt_file) as f:
+                    line = f.readline()
+                    if line.strip() != "":
+                        class_id = int(line.split()[0])
+                        image_files.append(img_path)
+                        labels.append(class_id)
+
+print(f"Total images with labels found: {len(image_files)}")
+
+if len(image_files) == 0:
+    raise ValueError("No images with labels found. Check file paths and extensions.")
+
+# ===== Step 6: Split into train/val =====
+try:
+    train_imgs, val_imgs, train_labels, val_labels = train_test_split(
+        image_files, labels, test_size=0.2, random_state=42, stratify=labels
+    )
+except ValueError:
+    # fallback for very small dataset
+    train_imgs, val_imgs, train_labels, val_labels = train_test_split(
+        image_files, labels, test_size=0.2, random_state=42, stratify=None
+    )
+
+# ===== Step 7: Copy images into TensorFlow folders =====
+def copy_images(img_list, label_list, split):
+    for img_path, cls_id in zip(img_list, label_list):
+        cls_name = classes[cls_id]
+        dst_path = os.path.join(TF_DATASET_DIR, split, cls_name, os.path.basename(img_path))
+        shutil.copy(img_path, dst_path)
+
+copy_images(train_imgs, train_labels, "train")
+copy_images(val_imgs, val_labels, "val")
+
+print("✅ Dataset successfully converted to TensorFlow format!")
