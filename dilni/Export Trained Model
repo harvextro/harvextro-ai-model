@@ -1,0 +1,9 @@
+import shutil, os
+
+os.makedirs('/kaggle/working/chilli_detection_final', exist_ok=True)
+shutil.copy(weights, '/kaggle/working/chilli_detection_final/')
+shutil.copy('cfg/yolov3-tiny-custom.cfg', '/kaggle/working/chilli_detection_final/')
+shutil.copy('data/obj.names', '/kaggle/working/chilli_detection_final/')
+shutil.copy('data/obj.data', '/kaggle/working/chilli_detection_final/')
+shutil.make_archive('/kaggle/working/chilli_detection_files', 'zip', '/kaggle/working/chilli_detection_final')
+print("✅ Done! Download chilli_detection_files.zip")
