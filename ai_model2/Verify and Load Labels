@@ -1,0 +1,19 @@
+classes_path = "/content/drive/MyDrive/SDGP/AI model /detection/yolo/chiili.names"
+
+with open(classes_path, "w") as f:
+    f.write("red\ngreen\nyellow\nmixed\n")
+
+print(f"File created at: {classes_path}")
+
+# the etection part using Yolo v3 tiny and the opencv
+net = cv2.dnn.readNet(
+    "yolov3-tiny.weights",
+    "yolov3-tiny.cfg"
+)
+
+classes_path = "/content/drive/MyDrive/SDGP/Ai_model/detection/yolo/chiili.names"
+
+with open(classes_path) as f:
+    classes = [line.strip() for line in f.readlines()]
+
+print(classes)  # ['red', 'green', 'yellow', 'mixed']
