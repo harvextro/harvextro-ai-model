@@ -28,17 +28,17 @@ if os.path.exists('darknet'):
 else:
     print("❌ Failed")
 
-import os, glob, random, shutil
 
-# Create folders
+import glob, random, shutil
+
+# Create folders for dataset and backup weights
 os.makedirs('/kaggle/working/darknet_new/data/obj', exist_ok=True)
 os.makedirs('/kaggle/working/backup', exist_ok=True)
 
-# ✅ FIXED: Your dataset is flat (all files directly in obj/ folder)
-# Update this to match your Kaggle dataset name
+# Path to your dataset (update if needed)
 DATASET_PATH = '/kaggle/input/datasets/dilniwijesinghe/scotchbonnet-new/yolo_dataset/obj'
 
-# Copy ALL files (images + label .txt files) directly
+# Copy all images and labels to darknet obj folder
 copied = 0
 if os.path.exists(DATASET_PATH):
     for f in os.listdir(DATASET_PATH):
@@ -48,10 +48,10 @@ if os.path.exists(DATASET_PATH):
         copied += 1
 else:
     print(f"❌ Dataset path not found: {DATASET_PATH}")
-    print("Available paths:")
     for p in glob.glob('/kaggle/input/*/*'):
         print(" ", p)
 
+# Count total images and labels
 total_imgs = len(glob.glob('/kaggle/working/darknet_new/data/obj/*.jpg'))
 total_txts = len(glob.glob('/kaggle/working/darknet_new/data/obj/*.txt'))
 print(f"✅ Files copied: {copied}")
