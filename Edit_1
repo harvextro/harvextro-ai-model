@@ -123,8 +123,8 @@ os.chdir('/kaggle/working/darknet_new')
 
 !rm -rf /kaggle/working/backup/*
 
-print("🚀 STARTING CHILLI DETECTION TRAINING!")
-print("🌶️  Classes: yellow_chilli, green_chilli, mix_chilli, red_chilli, leaves")
+print("STARTING CHILLI DETECTION TRAINING!")
+print("Classes: yellow_chilli, green_chilli, mix_chilli, red_chilli, leaves")
 print("="*50)
 
 # Verify data before training
@@ -404,3 +404,4 @@ shutil.copy('/kaggle/working/darknet_new/data/obj.names', '/kaggle/working/live_
 
 shutil.make_archive('/kaggle/working/live_detection_files', 'zip', '/kaggle/working/live_detection')
 print("✅ Done! Download live_detection_files.zip from the output panel")
+
