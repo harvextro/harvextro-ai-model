@@ -1,0 +1,20 @@
+from IPython.display import Image as IPyImage, display
+import tempfile
+
+cap = cv2.VideoCapture(OUTPUT_VIDEO)
+PREVIEW_FRAMES = 5
+step = max(int(cap.get(cv2.CAP_PROP_FRAME_COUNT)//PREVIEW_FRAMES), 1)
+
+shown, frame_idx = 0, 0
+while shown < PREVIEW_FRAMES:
+    ret, frame = cap.read()
+    if not ret:
+        break
+    if frame_idx % step == 0:
+        tmp = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+        cv2.imwrite(tmp.name, frame)
+        display(IPyImage(tmp.name))
+        os.unlink(tmp.name)
+        shown += 1
+    frame_idx += 1
+cap.release()
