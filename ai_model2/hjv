@@ -1,0 +1,40 @@
+print(os.listdir("/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras/train"))
+
+train_datagen = ImageDataGenerator(
+    rescale=1./255,
+    rotation_range=20,# rotates upto 20
+    zoom_range=0.2,# zooms upto 0.2
+    horizontal_flip=True# mirror images , increse the dataset
+
+val_datagen = ImageDataGenerator(rescale=1./255)
+
+annotation_file = "/content/drive/MyDrive/SDGP/Scotch Bonnet Sorting.v1i.yolokeras/train/_annotations.txt"
+
+with open(annotation_file) as f:
+    for i in range(5):
+        print(f.readline())
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+train_gen = ImageDataGenerator(rescale=1./255)
+
+train_data = train_gen.flow_from_directory(
+    "/content/drive/MyDrive/SDGP/dataset_tf/train",
+    target_size=(224,224),
+    batch_size=4,
+    class_mode="categorical"
+)
+
+val_gen = val_datagen.flow_from_directory(
+    "/content/drive/MyDrive/SDGP/dataset_tf/val",  # <-- actual path
+    target_size=(224,224),
+    batch_size=4,
+    class_mode="categorical"
+)
+IMG_SIZE = 224  # make sure this is set
+
+base_model = MobileNetV2(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(IMG_SIZE, IMG_SIZE, 3)
+)
