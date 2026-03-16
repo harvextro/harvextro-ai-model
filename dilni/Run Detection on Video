@@ -1,5 +1,4 @@
 import cv2, numpy as np, time
-
 VIDEO_PATH = '/kaggle/input/datasets/dilniwijesinghe/output1/video1.mp4'
 OUTPUT_VIDEO = '/kaggle/working/detected_output.mp4'
 
