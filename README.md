@@ -181,10 +181,12 @@ Update `VIDEO_PATH` and `WEIGHTS` in `detect.py` to point to your files.
 
 ## 👥 Team
 
-**Harvextro** — IIT Software Development Group Project (SDGP)
+**Harvextro** — CS 135
+Supuni Wijesinghe (Leader)
+Dilni Wijesinghe
+Manthisi Herath
+Thinara Senarathna
+Imasha Kumarasiri
+Kavinima Dulsadi
 
----
 
-## 📄 License
-
-This project is licensed under the MIT License.
