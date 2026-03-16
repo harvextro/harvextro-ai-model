@@ -1,5 +1,4 @@
 import shutil, os
-
 os.makedirs('/kaggle/working/chilli_detection_final', exist_ok=True)
 
 shutil.copy(weights, '/kaggle/working/chilli_detection_final/')
