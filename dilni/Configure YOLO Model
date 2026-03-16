@@ -1,5 +1,4 @@
 import re
-
 # Copy base cfg
 !cp cfg/yolov3-tiny.cfg cfg/yolov3-tiny-custom.cfg
 
