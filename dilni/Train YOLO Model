@@ -1,2 +1,1 @@
-!./darknet detector train data/obj.data cfg/yolov3-tiny-custom.cfg 
-backup/yolov3-tiny-custom_last.weights -dont_show -map
+!./darknet detector train data/obj.data cfg/yolov3-tiny-custom.cfg backup/yolov3-tiny-custom_last.weights -dont_show -map
