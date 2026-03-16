@@ -1,2 +1,3 @@
 !wget -q https://pjreddie.com/media/files/yolov3-tiny.weights
+
 print("✅ Pretrained weights downloaded")
