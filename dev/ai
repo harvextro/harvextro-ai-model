@@ -1,0 +1,5 @@
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model Loss')
+plt.legend(['train','validation'])
+plt.show()
