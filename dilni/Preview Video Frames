@@ -1,4 +1,5 @@
 from IPython.display import Image as IPyImage, display
+
 import tempfile
 
 cap = cv2.VideoCapture(OUTPUT_VIDEO)
