@@ -1,0 +1,16 @@
+# ─── WRITE dataset.yaml ─────────────────────────────────────────
+yaml_cfg = {
+    "path" : OUTPUT_ROOT,
+    "train": "train/images",
+    "val"  : "valid/images",
+    "test" : "test/images",
+    "nc"   : len(CLASSES),
+    "names": CLASSES
+}
+yaml_path = f"{OUTPUT_ROOT}/dataset.yaml"
+with open(yaml_path, "w") as f:
+    yaml.dump(yaml_cfg, f, default_flow_style=False)
+
+print("dataset.yaml contents:")
+print(open(yaml_path).read())
+
