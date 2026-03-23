@@ -1,0 +1,18 @@
+# Run this section only if you want to keep the Darknet baseline
+# for mAP comparison. Skip to Section 4 for pure YOLOv8.
+
+RUN_DARKNET_BASELINE = False   # ← set True to run
+
+if RUN_DARKNET_BASELINE:
+    import os
+    os.chdir("/kaggle/working")
+    !git clone https://github.com/AlexeyAB/darknet darknet --quiet
+    os.chdir("/kaggle/working/darknet")
+    !sed -i "s/GPU=0/GPU=1/" Makefile
+    !sed -i "s/CUDNN=0/CUDNN=1/" Makefile
+    !sed -i "s/OPENCV=0/OPENCV=1/" Makefile
+    !make -j2 2>&1 | tail -5
+    !wget -q https://pjreddie.com/media/files/yolov3-tiny.weights
+    print("✅ Darknet built + weights ready")
+else:
+    print("⏭  Darknet baseline skipped — set RUN_DARKNET_BASELINE=True to enable")
