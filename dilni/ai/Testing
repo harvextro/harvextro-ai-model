@@ -1,0 +1,39 @@
+# ─── EVALUATE on TEST SET ───────────────────────────────────────
+# Load the best weights discovered during training
+best_model = YOLO(str(best_weights))
+
+metrics = best_model.val(
+    data   = yaml_path,
+    split  = "test",    # Specifically check the 'test' split
+    imgsz  = IMG_SIZE,
+    conf   = 0.25,
+    iou    = 0.45,
+    plots  = True,
+    save_json = True,
+    project= f"{OUTPUT_ROOT}/runs",
+    name   = f"{RUN_NAME}_eval",
+)
+
+print("\n" + "═"*25 + " Evaluation Results " + "═"*25)
+print(f"  mAP@0.50     : {metrics.box.map50:.4f}")
+print(f"  mAP@0.50:0.95: {metrics.box.map:.4f}")
+print(f"  Precision    : {metrics.box.mp:.4f}")
+print(f"  Recall       : {metrics.box.mr:.4f}")
+print()
+for i, cls in enumerate(CLASSES):
+    print(f"  [{cls:15s}]  AP50: {metrics.box.ap50[i]:.4f}")
+
+# ─── RUN INFERENCE on TEST IMAGES ───────────────────────────────
+# Pick a few sample images to see the visual output
+test_images = list((Path(OUTPUT_ROOT) / "test" / "images").glob("*.jpg"))[:8]
+
+results_list = best_model.predict(
+    source = test_images,
+    conf   = 0.25,
+    iou    = 0.45,
+    imgsz  = IMG_SIZE,
+    save   = True,
+    project= f"{OUTPUT_ROOT}/runs",
+    name   = f"{RUN_NAME}_predict",
+)
+print(f"\n✅ Predictions saved for {len(results_list)} images in the runs folder")
