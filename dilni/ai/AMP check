@@ -1,0 +1,15 @@
+!ls /kaggle/working/harvextro_yolov8/
+
+import os
+
+# This is the hidden file YOLOv8 often downloads for the AMP check
+amp_check_file = "yolo26n.pt" 
+
+if os.path.exists(amp_check_file):
+    os.remove(amp_check_file)
+    print(f"🗑️ Deleted {amp_check_file} to reset the AMP check.")
+
+# Also remove your main model file if it was corrupted
+if os.path.exists("yolov8n.pt"):
+    os.remove("yolov8n.pt")
+    print("🗑️ Deleted yolov8n.pt to ensure a clean start.")
