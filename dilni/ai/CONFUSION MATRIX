@@ -1,0 +1,11 @@
+# ─── CONFUSION MATRIX ───────────────────────────────────────────
+# Ultralytics auto-saves confusion_matrix.png in the eval run dir
+# Load and display it
+eval_dir = Path(f"{OUTPUT_ROOT}/runs/{RUN_NAME}_eval")
+cm_img = list(eval_dir.glob("*confusion_matrix*.png"))
+if cm_img:
+    from IPython.display import display
+    display(Image.open(cm_img[0]))
+    print(f"Confusion matrix from: {cm_img[0]}")
+else:
+    print("Confusion matrix image not found — check eval run directory.")
