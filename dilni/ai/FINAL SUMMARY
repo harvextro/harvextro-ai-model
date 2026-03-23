@@ -1,0 +1,15 @@
+# ─── FINAL SUMMARY ──────────────────────────────────────────────
+print("="*55)
+print("  HarveXtro YOLOv8 Pipeline — Final Summary")
+print("="*55)
+print(f"  Model variant : YOLOv8{MODEL_SIZE}")
+print(f"  Best weights  : {best_weights}")
+print(f"  TFLite model  : {tflite_path}")
+print()
+print(f"  Test mAP@0.50     : {metrics.box.map50:.4f}")
+print(f"  Test mAP@0.50:0.95: {metrics.box.map:.4f}")
+print("\nOutput artifacts:")
+for f in sorted(Path(OUTPUT_ROOT).glob("*.png")):
+    print(f"    • {f.name}")
+print(f"    • runs/{RUN_NAME}/weights/best.pt")
+print(f"    • {Path(tflite_path).name} (edge deployment)")
